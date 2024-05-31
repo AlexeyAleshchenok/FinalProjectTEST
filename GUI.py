@@ -98,7 +98,8 @@ while running:
     screen.fill(WHITE)
     file_buttons_rects = []
     repeat_button_rects = []
-    start_button_rects = None
+    start_button_rects = pygame.Rect(WIDTH / 2 - 100, 500, 200, 50)
+    quit_button_rects = pygame.Rect(WIDTH / 2 - 100, HEIGHT - 200, 200, 50)
 
     if not test_started:
         draw_text("Select file size (MB):", font, BLACK, WIDTH / 2, 150)
@@ -114,11 +115,14 @@ while running:
             button_x = WIDTH / 2 - (len(NUM_REPEATS) * 30) + i * 60
             button_y = 400
             draw_button(str(num_repeat), button_x, button_y, 50, 30, GRAY)
-            repeat_button_rects.append(pygame.Rect(button_x, button_y, 20, 30))
+            repeat_button_rects.append(pygame.Rect(button_x, button_y, 50, 30))
 
-        start_button_rects = pygame.Rect(WIDTH / 2 - 100, 500, 200, 50)
         draw_button("Start test", start_button_rects.x, start_button_rects.y, start_button_rects.width,
                     start_button_rects.height, GRAY)
+        draw_text(f"Current file size: {selected_file}", font, BLACK, WIDTH / 2, 600)
+        draw_text(f"Current number of repeats: {selected_num_repeats}", font, BLACK, WIDTH / 2, 625)
+        draw_button("Quit", quit_button_rects.x, quit_button_rects.y, quit_button_rects.width,
+                    quit_button_rects.height, GRAY)
         pygame.display.update()
 
     else:
@@ -133,7 +137,9 @@ while running:
                       350)
             draw_text(f"Max Speed: {bandwidth_results['max_speed']} Mbps", small_font, BLACK, WIDTH * 3 / 4, 400)
             draw_speed_graph(screen, bandwidth_results, collector.get_bandwidth_results(),
-                             (WIDTH / 2, 500), (WIDTH / 3, HEIGHT / 3))
+                             (WIDTH / 2, 450), (WIDTH / 3, HEIGHT / 3))
+            draw_button("Quit", quit_button_rects.x, quit_button_rects.y, quit_button_rects.width,
+                        quit_button_rects.height, GRAY)
         else:
             animate_loading("Analyzing your network", font, BLACK, WIDTH / 2, HEIGHT / 2, frame_count)
             frame_count += 1
@@ -143,6 +149,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            if quit_button_rects.collidepoint(event.pos):
+                running = False
             if not test_started:
                 for i, file_size in enumerate(FILE_SIZES):
                     if file_buttons_rects[i].collidepoint(event.pos):
