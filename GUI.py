@@ -67,8 +67,8 @@ def draw_speed_graph(graph_screen, analyzed_bandwidth, bandwidth_res, position, 
                      2)
 
     graph_font = pygame.font.Font(None, 24)
-    max_speed_text = graph_font.render(f"Max speed : {max_speed:.2f} KB/s", True, BLACK)
-    avg_speed_text = graph_font.render(f"Average speed: {avg_speed:.2f} KB/s", True, BLACK)
+    max_speed_text = graph_font.render(f"Max speed : {max_speed:.2f} Mbps", True, BLACK)
+    avg_speed_text = graph_font.render(f"Average speed: {avg_speed:.2f} Mbps", True, BLACK)
     screen.blit(max_speed_text, (graph_x, graph_y - 20))
     screen.blit(avg_speed_text, (graph_x, graph_y + graph_height + 5))
 
