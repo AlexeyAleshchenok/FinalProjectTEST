@@ -1,5 +1,6 @@
 import socket
 import os
+import threading
 
 IP = '0.0.0.0'
 PORT = 80
@@ -46,6 +47,7 @@ def handle_client(client_socket):
         except socket.timeout:
             break
     print('Closing connection')
+    client_socket.close()
 
 
 def main():
@@ -58,13 +60,9 @@ def main():
         while True:
             client_socket, client_address = server_socket.accept()
             print(f'New connection with {client_address}')
-            try:
-                client_socket.settimeout(SOCKET_TIMEOUT)
-                handle_client(client_socket)
-            except socket.error as err:
-                print('Received socket exception - ' + str(err))
-            finally:
-                client_socket.close()
+            client_socket.settimeout(SOCKET_TIMEOUT)
+            client_thread = threading.Thread(target=handle_client, args=(client_socket,))
+            client_thread.start()
     except socket.error as err:
         print('Received socket exception - ' + str(err))
     finally:

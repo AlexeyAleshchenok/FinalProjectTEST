@@ -22,14 +22,14 @@ small_font = pygame.font.SysFont("", 30)
 
 running = True
 test_started = False
+loading = False
 analyze_thread = threading.Thread()
+animation_thread = threading.Thread()
 selected_file = 50
 selected_num_repeats = 3
 collector = None
 ping_results = {}
 bandwidth_results = {}
-animation_start_time = 0
-frame_count = 0
 
 
 def draw_text(text, text_font, color, x, y):
@@ -73,25 +73,26 @@ def draw_speed_graph(graph_screen, analyzed_bandwidth, bandwidth_res, position, 
     screen.blit(avg_speed_text, (graph_x, graph_y + graph_height + 5))
 
 
-def animate_loading(text, text_font, color, x, y, frame_counter):
-    dot_count = (frame_counter // 200) % 4
-    animated_text = text + '.' * dot_count
-    draw_text(animated_text, text_font, color, x, y)
+def animate_loading():
+    global loading
+    while loading:
+        for j in range(4):
+            dots = '.' * j
+            screen.fill(WHITE)
+            draw_text(f"Analyzing your network{dots}", font, BLACK, WIDTH / 2, HEIGHT / 2)
+            pygame.display.flip()
+            time.sleep(0.5)
+            if not loading:
+                break
 
 
 def analyze_network():
-    global collector, ping_results, bandwidth_results
+    global collector, ping_results, bandwidth_results, loading
     collector.ping()
     collector.bandwidth()
     ping_results = collector.analyze_ping_results()
     bandwidth_results = collector.analyze_bandwidth_results()
-
-
-def start_analysis():
-    global test_started, analyze_thread
-    test_started = True
-    analyze_thread = threading.Thread(target=analyze_network())
-    analyze_thread.start()
+    loading = False
 
 
 while running:
@@ -126,23 +127,18 @@ while running:
         pygame.display.update()
 
     else:
-        current_time = time.time()
-        if current_time - animation_start_time > 5:
-            draw_text("Ping Results:", font, BLACK, WIDTH / 4, 300)
-            draw_text(f"Average Delay: {ping_results['average_delay']} ms", small_font, BLACK, WIDTH / 4, 350)
-            draw_text(f"Total Loss: {ping_results['total_loss']}", small_font, BLACK, WIDTH / 4, 400)
-            draw_text(f"Loss Percentage: {ping_results['loss_percentage']}%", small_font, BLACK, WIDTH / 4, 450)
-            draw_text("Bandwidth", font, BLACK, WIDTH * 3 / 4, 300)
-            draw_text(f"Average Speed: {bandwidth_results['average_speed']} Mbps", small_font, BLACK, WIDTH * 3 / 4,
-                      350)
-            draw_text(f"Max Speed: {bandwidth_results['max_speed']} Mbps", small_font, BLACK, WIDTH * 3 / 4, 400)
-            draw_speed_graph(screen, bandwidth_results, collector.get_bandwidth_results(),
-                             (WIDTH / 2, 450), (WIDTH / 3, HEIGHT / 3))
-            draw_button("Quit", quit_button_rects.x, quit_button_rects.y, quit_button_rects.width,
-                        quit_button_rects.height, GRAY)
-        else:
-            animate_loading("Analyzing your network", font, BLACK, WIDTH / 2, HEIGHT / 2, frame_count)
-            frame_count += 1
+        draw_text("Ping Results:", font, BLACK, WIDTH / 4, 300)
+        draw_text(f"Average Delay: {ping_results['average_delay']} ms", small_font, BLACK, WIDTH / 4, 350)
+        draw_text(f"Total Loss: {ping_results['total_loss']}", small_font, BLACK, WIDTH / 4, 400)
+        draw_text(f"Loss Percentage: {ping_results['loss_percentage']}%", small_font, BLACK, WIDTH / 4, 450)
+        draw_text("Bandwidth", font, BLACK, WIDTH * 3 / 4, 300)
+        draw_text(f"Average Speed: {bandwidth_results['average_speed']} Mbps", small_font, BLACK, WIDTH * 3 / 4,
+                  350)
+        draw_text(f"Max Speed: {bandwidth_results['max_speed']} Mbps", small_font, BLACK, WIDTH * 3 / 4, 400)
+        draw_speed_graph(screen, bandwidth_results, collector.get_bandwidth_results(),
+                         (WIDTH / 2, 450), (WIDTH / 3, HEIGHT / 3))
+        draw_button("Quit", quit_button_rects.x, quit_button_rects.y, quit_button_rects.width,
+                    quit_button_rects.height, GRAY)
         pygame.display.flip()
 
     for event in pygame.event.get():
@@ -162,8 +158,14 @@ while running:
 
                 if start_button_rects.collidepoint(event.pos):
                     collector = NetworkDataCollector(selected_file, selected_num_repeats)
-                    animation_start_time = time.time()
-                    start_analysis()
+                    test_started = True
+                    loading = True
+                    animation_thread = threading.Thread(target=animate_loading)
+                    analyze_thread = threading.Thread(target=analyze_network)
+                    analyze_thread.start()
+                    animation_thread.start()
+                    animation_thread.join()
+                    animation_thread.join()
 
 pygame.quit()
 sys.exit()
